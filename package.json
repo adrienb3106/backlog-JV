@@ -1,0 +1,16 @@
+{
+  "name": "suivi-jeux",
+  "version": "1.0.0",
+  "description": "Backlog de jeux vidéo — AYN Thor",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

@@ -1,0 +1,11 @@
+services:
+  suivi-jeux:
+    build: .
+    container_name: suivi-jeux
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+    volumes:
+      - ./data:/app/data

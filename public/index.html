@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎮 Backlog — AYN Thor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <header class="header">
+      <div class="header-left">
+        <div class="header-logo">🎮</div>
+        <div>
+          <h1 class="header-title">Backlog</h1>
+          <span class="header-sub">AYN Thor</span>
+        </div>
+      </div>
+      <div id="stats-bar" class="stats-bar">
+        <div class="stat-item" data-filter="all">
+          <span class="stat-num" id="stat-total">—</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-item stat-todo" data-filter="todo">
+          <span class="stat-num" id="stat-todo">—</span>
+          <span class="stat-label">À faire</span>
+        </div>
+        <div class="stat-item stat-done" data-filter="done">
+          <span class="stat-num" id="stat-done">—</span>
+          <span class="stat-label">Terminés</span>
+        </div>
+        <div class="stat-item stat-replay" data-filter="replay">
+          <span class="stat-num" id="stat-replay">—</span>
+          <span class="stat-label">À refaire</span>
+        </div>
+        <div class="stat-item stat-paused" data-filter="paused">
+          <span class="stat-num" id="stat-paused">—</span>
+          <span class="stat-label">En pause</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search" placeholder="Rechercher…" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <aside class="sidebar" id="sidebar">
+        <button class="sidebar-toggle" id="sidebar-toggle" title="Masquer le filtre">◀</button>
+
+        <div class="filter-section">
+          <div class="filter-title">Catégorie</div>
+          <div class="filter-list" id="cat-filters">
+            <button class="filter-btn active" data-cat="">Toutes</button>
+            <button class="filter-btn" data-cat="Portable">📱 Portable</button>
+            <button class="filter-btn" data-cat="Salon">🕹️ Salon</button>
+            <button class="filter-btn" data-cat="PC">💻 PC</button>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <div class="filter-title">Console</div>
+          <div class="filter-list" id="console-filters"></div>
+        </div>
+
+        <div class="filter-section">
+          <div class="filter-title">Statut</div>
+          <div class="filter-list" id="status-filters">
+            <button class="filter-btn active" data-statut="">Tous</button>
+            <button class="filter-btn" data-statut="todo">⬜ À faire</button>
+            <button class="filter-btn" data-statut="done">✅ Terminé</button>
+            <button class="filter-btn" data-statut="replay">🔄 À refaire</button>
+            <button class="filter-btn" data-statut="paused">⏸️ En pause</button>
+            <button class="filter-btn" data-statut="dropped">❌ Abandonné</button>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <div class="filter-title">Trier par</div>
+          <select class="sort-select" id="sort-select">
+            <option value="metacritic">Metacritic ↓</option>
+            <option value="titre">Titre A→Z</option>
+            <option value="duree">Durée</option>
+            <option value="note">Ma note ↓</option>
+          </select>
+        </div>
+      </aside>
+
+      <main class="main" id="main">
+        <div class="results-header">
+          <span id="results-count" class="results-count"></span>
+        </div>
+        <div class="games-grid" id="games-grid"></div>
+        <div class="empty-state hidden" id="empty-state">
+          <div class="empty-icon">🎮</div>
+          <p>Aucun jeu trouvé</p>
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span id="modal-badge" class="console-badge"></span>
+          <h2 id="modal-title"></h2>
+        </div>
+        <button class="modal-close" id="modal-close" aria-label="Fermer">×</button>
+      </div>
+
+      <div class="modal-meta">
+        <span id="modal-genre" class="tag"></span>
+        <span id="modal-mc" class="tag tag-mc"></span>
+        <span id="modal-duree" class="tag tag-muted"></span>
+        <span id="modal-annee" class="tag tag-muted"></span>
+      </div>
+
+      <div class="modal-desc" id="modal-desc"></div>
+
+      <div class="modal-form">
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <div class="status-grid" id="modal-status-grid"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ma note <span class="form-hint">/10</span></label>
+          <div class="rating-row">
+            <div class="stars-row" id="stars-row"></div>
+            <span class="rating-value" id="rating-display">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-save" id="modal-save">Enregistrer</button>
+        <button class="btn btn-cancel" id="modal-cancel">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
