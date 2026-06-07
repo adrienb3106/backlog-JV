@@ -83,8 +83,22 @@
       <main class="main" id="main">
         <div class="results-header">
           <span id="results-count" class="results-count"></span>
+          <button class="btn-add" id="btn-add">+ Ajouter un jeu</button>
         </div>
-        <div class="games-grid" id="games-grid"></div>
+
+        <div class="games-list" id="games-list">
+          <div class="list-header">
+            <span class="col-title">Titre</span>
+            <span class="col-console">Console</span>
+            <span class="col-genre">Genre</span>
+            <span class="col-mc">MC</span>
+            <span class="col-duree">Durée</span>
+            <span class="col-note">Note</span>
+            <span class="col-status"></span>
+          </div>
+          <div id="list-body"></div>
+        </div>
+
         <div class="empty-state hidden" id="empty-state">
           <div class="empty-icon">🎮</div>
           <p>Aucun jeu trouvé</p>
@@ -94,7 +108,7 @@
     </div>
   </div>
 
-  <!-- Edit Modal -->
+  <!-- Modal (édition + ajout) -->
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-overlay" id="modal-overlay"></div>
     <div class="modal-box">
@@ -106,14 +120,44 @@
         <button class="modal-close" id="modal-close" aria-label="Fermer">×</button>
       </div>
 
-      <div class="modal-meta">
-        <span id="modal-genre" class="tag"></span>
-        <span id="modal-mc" class="tag tag-mc"></span>
-        <span id="modal-duree" class="tag tag-muted"></span>
-        <span id="modal-annee" class="tag tag-muted"></span>
+      <!-- Infos lecture seule (mode édition) -->
+      <div id="modal-edit-info">
+        <div class="modal-meta">
+          <span id="modal-genre" class="tag"></span>
+          <span id="modal-mc" class="tag tag-mc"></span>
+          <span id="modal-duree" class="tag tag-muted"></span>
+          <span id="modal-annee" class="tag tag-muted"></span>
+        </div>
+        <div class="modal-desc" id="modal-desc"></div>
       </div>
 
-      <div class="modal-desc" id="modal-desc"></div>
+      <!-- Champs (mode ajout) -->
+      <div class="add-fields hidden" id="add-fields">
+        <div class="form-group">
+          <label class="form-label">Titre <span class="required">*</span></label>
+          <input type="text" class="form-input" id="add-titre" placeholder="Nom du jeu" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Console <span class="required">*</span></label>
+            <select class="form-input" id="add-console"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Genre</label>
+            <input type="text" class="form-input" id="add-genre" placeholder="RPG, Action…" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Metacritic</label>
+            <input type="number" class="form-input" id="add-mc-input" min="0" max="100" placeholder="0–100" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Durée</label>
+            <input type="text" class="form-input" id="add-duree" placeholder="ex: 30h" />
+          </div>
+        </div>
+      </div>
 
       <div class="modal-form">
         <div class="form-group">

@@ -228,6 +228,40 @@ app.put('/api/games/:id', (req, res) => {
   }
 });
 
+app.post('/api/games', (req, res) => {
+  try {
+    const games = loadGames();
+    const { titre, console: con, genre, statut, note, metacritic, duree, notes } = req.body;
+
+    if (!titre || !con) return res.status(400).json({ error: 'titre et console sont requis' });
+
+    const base = toSlug(`${con}-${titre}`);
+    let id = base;
+    let n  = 2;
+    while (games.find(g => g.id === id)) id = `${base}-${n++}`;
+
+    const game = {
+      id,
+      titre:      titre.trim(),
+      console:    con,
+      pcGenre:    con === 'PC' ? (genre || null) : null,
+      annee:      null,
+      genre:      (genre  || '').trim(),
+      statut:     statut  || 'todo',
+      note:       note       != null ? parseFloat(note)       : null,
+      metacritic: metacritic != null ? parseInt(metacritic, 10) || null : null,
+      duree:      (duree  || '').trim(),
+      notes:      (notes  || '').trim(),
+    };
+
+    games.push(game);
+    saveGames(games);
+    res.status(201).json(game);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/stats', (req, res) => {
   try {
     const games = loadGames();

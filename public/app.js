@@ -1,4 +1,9 @@
-// ─── Console colour palette ─────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
+const CONSOLE_ORDER = [
+  'GB/GBC','GBA','NDS','3DS','PSP','PS Vita',
+  'NES','SNES','Mega Drive','N64','Saturn','Dreamcast','PS1','PS2','GameCube','PC',
+];
+
 const CONSOLE_COLORS = {
   'GB/GBC':    { bg: '#78350f', color: '#fde68a' },
   'GBA':       { bg: '#4c1d95', color: '#ddd6fe' },
@@ -26,18 +31,19 @@ const STATUS_CONFIG = {
   dropped: { icon: '❌', label: 'Abandonné', color: '#ef4444' },
 };
 
-// ─── State ──────────────────────────────────────────────────────────────────
+// ─── State ───────────────────────────────────────────────────────────────────
 const state = {
   games:   [],
   stats:   null,
   filters: { console: '', statut: '', search: '' },
   sortBy:  'metacritic',
-  modal:   { open: false, game: null, statut: null, note: null },
+  modal:   { open: false, mode: 'edit', game: null, statut: null, note: null },
 };
 
-// ─── Init ───────────────────────────────────────────────────────────────────
+// ─── Init ────────────────────────────────────────────────────────────────────
 async function init() {
   await Promise.all([loadGames(), loadStats()]);
+  populateConsoleSelect();
   bindEvents();
   render();
 }
@@ -52,7 +58,13 @@ async function loadStats() {
   state.stats = await res.json();
 }
 
-// ─── Filtering & sorting ────────────────────────────────────────────────────
+function populateConsoleSelect() {
+  const sel = document.getElementById('add-console');
+  sel.innerHTML = '<option value="">— Choisir —</option>' +
+    CONSOLE_ORDER.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+// ─── Filtering & sorting ─────────────────────────────────────────────────────
 function filteredGames() {
   const { console: con, statut, search } = state.filters;
   let list = state.games;
@@ -92,12 +104,11 @@ function parseDuration(str) {
   return m ? parseInt(m[1], 10) : 9999;
 }
 
-// ─── Rendering ──────────────────────────────────────────────────────────────
+// ─── Rendering ───────────────────────────────────────────────────────────────
 function render() {
   renderStats();
   renderConsoleFilters();
-  const games = filteredGames();
-  renderGames(games);
+  renderGames(filteredGames());
 }
 
 function renderStats() {
@@ -115,30 +126,23 @@ function renderConsoleFilters() {
   const container = document.getElementById('console-filters');
 
   const allBtn = `<button class="filter-btn ${!state.filters.console ? 'active' : ''}" data-console="">
-    <span>Toutes</span>
-    <span class="count">${state.stats.total}</span>
+    <span>Toutes</span><span class="count">${state.stats.total}</span>
   </button>`;
-
-  const CONSOLE_ORDER = [
-    'GB/GBC','GBA','NDS','3DS','PSP','PS Vita',
-    'NES','SNES','Mega Drive','N64','Saturn','Dreamcast','PS1','PS2','GameCube','PC'
-  ];
 
   const buttons = CONSOLE_ORDER
     .filter(c => state.stats.byConsole[c])
     .map(c => {
-      const d = state.stats.byConsole[c];
+      const d   = state.stats.byConsole[c];
       const active = state.filters.console === c ? 'active' : '';
-      const col = CONSOLE_COLORS[c] || { bg: '#333', color: '#ccc' };
+      const col = CONSOLE_COLORS[c] || { color: '#aaa' };
       const dot = `<span style="width:8px;height:8px;border-radius:50%;background:${col.color};display:inline-block;flex-shrink:0"></span>`;
       return `<button class="filter-btn ${active}" data-console="${c}">
-        ${dot} <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${c}</span>
+        ${dot}<span style="flex:1;overflow:hidden;text-overflow:ellipsis">${c}</span>
         <span class="count">${d.total}</span>
       </button>`;
     });
 
   container.innerHTML = allBtn + buttons.join('');
-
   container.querySelectorAll('[data-console]').forEach(btn => {
     btn.addEventListener('click', () => {
       state.filters.console = btn.dataset.console;
@@ -148,112 +152,125 @@ function renderConsoleFilters() {
 }
 
 function renderGames(games) {
-  const grid = document.getElementById('games-grid');
+  const body  = document.getElementById('list-body');
   const empty = document.getElementById('empty-state');
   const count = document.getElementById('results-count');
 
   count.textContent = `${games.length} jeu${games.length !== 1 ? 'x' : ''}`;
 
   if (games.length === 0) {
-    grid.innerHTML = '';
+    body.innerHTML = '';
     empty.classList.remove('hidden');
     return;
   }
   empty.classList.add('hidden');
-  grid.innerHTML = games.map(renderCard).join('');
+  body.innerHTML = games.map(renderRow).join('');
 
-  grid.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = card.dataset.id;
-      const game = state.games.find(g => g.id === id);
+  body.querySelectorAll('.list-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const game = state.games.find(g => g.id === row.dataset.id);
       if (game) openModal(game);
     });
   });
 }
 
 function consoleBadgeHtml(con) {
-  const col = CONSOLE_COLORS[con] || { bg: '#333', color: '#ccc' };
-  return `<span class="console-badge" style="background:${col.bg};color:${col.color}">${con}</span>`;
+  const col = CONSOLE_COLORS[con] || { bg: '#555', color: '#eee' };
+  return `<span class="console-badge" style="background:${col.bg};color:${col.color}">${escHtml(con)}</span>`;
 }
 
-function mcTagHtml(mc) {
-  if (!mc) return '';
+function mcHtml(mc) {
+  if (!mc) return '<span class="col-mc-empty">—</span>';
   const cls = mc >= 85 ? 'mc-good' : mc >= 70 ? 'mc-ok' : 'mc-meh';
   return `<span class="tag tag-mc ${cls}">MC ${mc}</span>`;
 }
 
-function renderCard(game) {
-  const s = STATUS_CONFIG[game.statut] || STATUS_CONFIG.todo;
+function renderRow(game) {
+  const s        = STATUS_CONFIG[game.statut] || STATUS_CONFIG.todo;
   const noteHtml = game.note
-    ? `<span class="card-note">★ ${game.note}</span>` : '';
-  const descHtml = game.notes
-    ? `<div class="card-desc">${escHtml(game.notes)}</div>` : '';
+    ? `<span class="row-note">★ ${game.note}</span>`
+    : '<span class="row-empty">—</span>';
 
-  return `<div class="card status-${game.statut}" data-id="${game.id}">
-    <div class="card-top">
-      <div class="card-title">${escHtml(game.titre)}</div>
-      <span class="card-status" title="${s.label}">${s.icon}</span>
-    </div>
-    ${noteHtml}
-    <div class="card-meta">
-      ${consoleBadgeHtml(game.console)}
-      <span class="tag">${escHtml(game.genre)}</span>
-      ${mcTagHtml(game.metacritic)}
-      ${game.duree ? `<span class="tag tag-muted">⏱ ${escHtml(game.duree)}</span>` : ''}
-    </div>
-    ${descHtml}
+  return `<div class="list-row status-${game.statut}" data-id="${game.id}">
+    <div class="col-title">${escHtml(game.titre)}</div>
+    <div class="col-console">${consoleBadgeHtml(game.console)}</div>
+    <div class="col-genre">${escHtml(game.genre) || '<span class="row-empty">—</span>'}</div>
+    <div class="col-mc">${mcHtml(game.metacritic)}</div>
+    <div class="col-duree">${game.duree ? escHtml(game.duree) : '<span class="row-empty">—</span>'}</div>
+    <div class="col-note">${noteHtml}</div>
+    <div class="col-status" title="${s.label}">${s.icon}</div>
   </div>`;
 }
 
-// ─── Modal ──────────────────────────────────────────────────────────────────
+// ─── Modal ───────────────────────────────────────────────────────────────────
 function openModal(game) {
-  state.modal = { open: true, game, statut: game.statut, note: game.note };
+  state.modal = { open: true, mode: 'edit', game, statut: game.statut, note: game.note };
   renderModal();
   document.getElementById('modal').classList.remove('hidden');
 }
 
+function openAddModal() {
+  state.modal = { open: true, mode: 'add', game: null, statut: 'todo', note: null };
+  renderModal();
+  document.getElementById('modal').classList.remove('hidden');
+  document.getElementById('add-titre').focus();
+}
+
 function closeModal() {
-  state.modal = { open: false, game: null, statut: null, note: null };
+  state.modal = { open: false, mode: 'edit', game: null, statut: null, note: null };
   document.getElementById('modal').classList.add('hidden');
 }
 
 function renderModal() {
-  const { game, statut, note } = state.modal;
+  const { mode, game, statut, note } = state.modal;
+  const isAdd = mode === 'add';
 
-  document.getElementById('modal-title').textContent = game.titre;
+  document.getElementById('modal-edit-info').classList.toggle('hidden', isAdd);
+  document.getElementById('add-fields').classList.toggle('hidden', !isAdd);
+  document.getElementById('modal-badge').classList.toggle('hidden', isAdd);
+  document.getElementById('modal-save').textContent = isAdd ? 'Ajouter' : 'Enregistrer';
 
-  // Badge
-  const col = CONSOLE_COLORS[game.console] || { bg: '#333', color: '#ccc' };
-  const badge = document.getElementById('modal-badge');
-  badge.textContent = game.console;
-  badge.style.background = col.bg;
-  badge.style.color = col.color;
-
-  // Meta tags
-  document.getElementById('modal-genre').textContent = game.genre;
-  document.getElementById('modal-genre').className = 'tag';
-
-  const mcEl = document.getElementById('modal-mc');
-  if (game.metacritic) {
-    const cls = game.metacritic >= 85 ? 'mc-good' : game.metacritic >= 70 ? 'mc-ok' : 'mc-meh';
-    mcEl.textContent = `Metacritic ${game.metacritic}`;
-    mcEl.className = `tag tag-mc ${cls}`;
+  if (isAdd) {
+    document.getElementById('modal-title').textContent = 'Ajouter un jeu';
+    document.getElementById('add-titre').value   = '';
+    document.getElementById('add-console').value = '';
+    document.getElementById('add-genre').value   = '';
+    document.getElementById('add-mc-input').value = '';
+    document.getElementById('add-duree').value   = '';
   } else {
-    mcEl.textContent = '';
-    mcEl.className = 'tag tag-mc';
+    document.getElementById('modal-title').textContent = game.titre;
+
+    const col   = CONSOLE_COLORS[game.console] || { bg: '#555', color: '#eee' };
+    const badge = document.getElementById('modal-badge');
+    badge.textContent      = game.console;
+    badge.style.background = col.bg;
+    badge.style.color      = col.color;
+
+    document.getElementById('modal-genre').textContent = game.genre;
+    document.getElementById('modal-genre').className   = 'tag';
+
+    const mcEl = document.getElementById('modal-mc');
+    if (game.metacritic) {
+      const cls = game.metacritic >= 85 ? 'mc-good' : game.metacritic >= 70 ? 'mc-ok' : 'mc-meh';
+      mcEl.textContent = `Metacritic ${game.metacritic}`;
+      mcEl.className   = `tag tag-mc ${cls}`;
+    } else {
+      mcEl.textContent = '';
+      mcEl.className   = 'tag tag-mc';
+    }
+
+    const dureeEl = document.getElementById('modal-duree');
+    dureeEl.textContent = game.duree ? `⏱ ${game.duree}` : '';
+    dureeEl.className   = 'tag tag-muted';
+
+    const anneeEl = document.getElementById('modal-annee');
+    anneeEl.textContent = game.annee ? `📅 ${game.annee}` : '';
+    anneeEl.className   = game.annee ? 'tag tag-muted' : 'hidden';
+
+    document.getElementById('modal-desc').textContent = game.notes || '';
   }
 
-  const dureeEl = document.getElementById('modal-duree');
-  dureeEl.textContent = game.duree ? `⏱ ${game.duree}` : '';
-  dureeEl.className = 'tag tag-muted';
-
-  const anneeEl = document.getElementById('modal-annee');
-  anneeEl.textContent = game.annee ? `📅 ${game.annee}` : '';
-  anneeEl.className = game.annee ? 'tag tag-muted' : 'hidden';
-
-  document.getElementById('modal-desc').textContent = game.notes || '';
-
-  // Status buttons
+  // Statut (commun)
   const grid = document.getElementById('modal-status-grid');
   grid.innerHTML = Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
     const active = statut === key ? 'active' : '';
@@ -271,22 +288,19 @@ function renderModal() {
     });
   });
 
-  // Stars rating
   renderStars(note);
 }
 
 function renderStars(current) {
-  const row = document.getElementById('stars-row');
+  const row     = document.getElementById('stars-row');
   const display = document.getElementById('rating-display');
-  const MAX = 10;
 
   row.innerHTML = '';
-  for (let i = 1; i <= MAX; i++) {
+  for (let i = 1; i <= 10; i++) {
     const star = document.createElement('span');
-    star.className = 'star' + (current && i <= current ? ' lit' : '');
+    star.className   = 'star' + (current && i <= current ? ' lit' : '');
     star.textContent = '★';
     star.dataset.val = i;
-
     star.addEventListener('mouseenter', () => highlightStars(i));
     star.addEventListener('mouseleave', () => highlightStars(state.modal.note || 0));
     star.addEventListener('click', () => {
@@ -300,12 +314,18 @@ function renderStars(current) {
 }
 
 function highlightStars(n) {
-  document.querySelectorAll('.star').forEach((s, i) => {
-    s.classList.toggle('lit', i < n);
-  });
+  document.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('lit', i < n));
 }
 
 async function saveModal() {
+  if (state.modal.mode === 'add') {
+    await saveNewGame();
+  } else {
+    await saveEditGame();
+  }
+}
+
+async function saveEditGame() {
   const { game, statut, note } = state.modal;
   try {
     const res = await fetch(`/api/games/${game.id}`, {
@@ -315,12 +335,8 @@ async function saveModal() {
     });
     if (!res.ok) throw new Error('Server error');
     const updated = await res.json();
-
-    // Update local state
     const idx = state.games.findIndex(g => g.id === game.id);
     if (idx !== -1) state.games[idx] = updated;
-
-    // Refresh stats
     await loadStats();
     closeModal();
     render();
@@ -330,22 +346,54 @@ async function saveModal() {
   }
 }
 
-// ─── Event bindings ─────────────────────────────────────────────────────────
+async function saveNewGame() {
+  const titre = document.getElementById('add-titre').value.trim();
+  const con   = document.getElementById('add-console').value;
+
+  if (!titre) { document.getElementById('add-titre').focus();   return; }
+  if (!con)   { document.getElementById('add-console').focus(); return; }
+
+  const body = {
+    titre,
+    console:    con,
+    genre:      document.getElementById('add-genre').value.trim(),
+    metacritic: parseInt(document.getElementById('add-mc-input').value) || null,
+    duree:      document.getElementById('add-duree').value.trim(),
+    statut:     state.modal.statut || 'todo',
+    note:       state.modal.note   || null,
+  };
+
+  try {
+    const res = await fetch('/api/games', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('Server error');
+    const newGame = await res.json();
+    state.games.push(newGame);
+    await loadStats();
+    closeModal();
+    render();
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de l'ajout.");
+  }
+}
+
+// ─── Events ──────────────────────────────────────────────────────────────────
 function bindEvents() {
-  // Search
   const searchEl = document.getElementById('search');
   searchEl.addEventListener('input', () => {
     state.filters.search = searchEl.value;
     render();
   });
 
-  // Sort
   document.getElementById('sort-select').addEventListener('change', e => {
     state.sortBy = e.target.value;
     render();
   });
 
-  // Status filters
   document.getElementById('status-filters').addEventListener('click', e => {
     const btn = e.target.closest('[data-statut]');
     if (!btn) return;
@@ -354,22 +402,20 @@ function bindEvents() {
     render();
   });
 
-  // Stats bar click (filter by status)
   document.getElementById('stats-bar').addEventListener('click', e => {
     const item = e.target.closest('[data-filter]');
     if (!item) return;
-    const f = item.dataset.filter;
-    state.filters.statut = f === 'all' ? '' : f;
+    state.filters.statut = item.dataset.filter === 'all' ? '' : item.dataset.filter;
     syncStatusButtons();
     render();
   });
 
-  // Sidebar toggle
   document.getElementById('sidebar-toggle').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('collapsed');
   });
 
-  // Modal
+  document.getElementById('btn-add').addEventListener('click', openAddModal);
+
   document.getElementById('modal-close').addEventListener('click', closeModal);
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-overlay').addEventListener('click', closeModal);
@@ -394,5 +440,5 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// ─── Boot ────────────────────────────────────────────────────────────────────
+// ─── Boot ─────────────────────────────────────────────────────────────────────
 init();
