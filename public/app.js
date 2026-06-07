@@ -30,7 +30,7 @@ const STATUS_CONFIG = {
 const state = {
   games:   [],
   stats:   null,
-  filters: { console: '', categorie: '', statut: '', search: '' },
+  filters: { console: '', statut: '', search: '' },
   sortBy:  'metacritic',
   modal:   { open: false, game: null, statut: null, note: null },
 };
@@ -54,12 +54,11 @@ async function loadStats() {
 
 // ─── Filtering & sorting ────────────────────────────────────────────────────
 function filteredGames() {
-  const { console: con, categorie, statut, search } = state.filters;
+  const { console: con, statut, search } = state.filters;
   let list = state.games;
 
-  if (con)      list = list.filter(g => g.console === con);
-  if (categorie) list = list.filter(g => g.categorie === categorie);
-  if (statut)   list = list.filter(g => g.statut === statut);
+  if (con)    list = list.filter(g => g.console === con);
+  if (statut) list = list.filter(g => g.statut === statut);
   if (search) {
     const q = search.toLowerCase();
     list = list.filter(g => g.titre.toLowerCase().includes(q));
@@ -143,8 +142,6 @@ function renderConsoleFilters() {
   container.querySelectorAll('[data-console]').forEach(btn => {
     btn.addEventListener('click', () => {
       state.filters.console = btn.dataset.console;
-      state.filters.categorie = '';
-      syncCatButtons();
       render();
     });
   });
@@ -348,16 +345,6 @@ function bindEvents() {
     render();
   });
 
-  // Category filters
-  document.getElementById('cat-filters').addEventListener('click', e => {
-    const btn = e.target.closest('[data-cat]');
-    if (!btn) return;
-    state.filters.categorie = btn.dataset.cat;
-    state.filters.console = '';
-    syncCatButtons();
-    render();
-  });
-
   // Status filters
   document.getElementById('status-filters').addEventListener('click', e => {
     const btn = e.target.closest('[data-statut]');
@@ -390,12 +377,6 @@ function bindEvents() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && state.modal.open) closeModal();
-  });
-}
-
-function syncCatButtons() {
-  document.querySelectorAll('#cat-filters [data-cat]').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.cat === state.filters.categorie);
   });
 }
 

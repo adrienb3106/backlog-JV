@@ -30,7 +30,6 @@ const CONSOLE_NAMES = {
   'GameCube': 'GameCube',
 };
 
-const PORTABLES = new Set(['GB/GBC', 'GBA', 'NDS', '3DS', 'PSP', 'PS Vita']);
 
 function stripLeadingEmoji(str) {
   return str
@@ -120,7 +119,6 @@ function parseMarkdown(content) {
           id: uid(toSlug(`pc-${cols[0]}`)),
           titre: cols[0],
           console: 'PC',
-          categorie: 'PC',
           pcGenre: pcSubcategory,
           annee: parseInt(cols[1], 10) || null,
           genre: cols[2],
@@ -137,7 +135,6 @@ function parseMarkdown(content) {
           id: uid(toSlug(`${currentConsole}-${cols[0]}`)),
           titre: cols[0],
           console: currentConsole,
-          categorie: PORTABLES.has(currentConsole) ? 'Portable' : 'Salon',
           pcGenre: null,
           annee: null,
           genre: cols[1],
@@ -187,10 +184,9 @@ function initData() {
 app.get('/api/games', (req, res) => {
   try {
     let games = loadGames();
-    const { console: con, categorie, statut, search } = req.query;
+    const { console: con, statut, search } = req.query;
 
-    if (con) games = games.filter(g => g.console === con);
-    if (categorie) games = games.filter(g => g.categorie === categorie);
+    if (con)    games = games.filter(g => g.console === con);
     if (statut) games = games.filter(g => g.statut === statut);
     if (search) {
       const q = search.toLowerCase();
